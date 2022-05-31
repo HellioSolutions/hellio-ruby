@@ -1,4 +1,4 @@
-require "helliomessaging/version"
+require "hellio-ruby/version"
 require "rubygems"
 require "net/https"
 require "uri"

@@ -1,10 +1,10 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'helliomessaging/version'
+require 'hellio-ruby/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "helliomessaging"
+  spec.name          = "hellio-ruby"
   spec.version       = HellioMessaging::VERSION
   spec.authors       = ["VimKanzo"]
   spec.email         = ["eaglesecurity0@gmail.com"]
