@@ -1,24 +1,32 @@
-# HellioMessaging
+# Hellio Messaging's REST API for Ruby
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/helliomessaging`. To experiment with that code, run `bin/console` for an interactive prompt.
+This repository contains the open source Ruby client for Hellio Messaging's REST API. Documentation can be found at: https://docs.helliomessaging.com/
 
-TODO: Delete this and the text above, and describe your gem
+The documentation for the Hellio Messaging API can be found here.https://docs.helliomessaging.com/
+
+## Requirements
+
+    - Sign up for a free Hellio Messaging account
+    - Create a new grab your client_id and your application_secret from your account settings
+    - Hellio Messaging's API client for Ruby requires Ruby >= 2.0 and above
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'helliomessaging'
+gem 'hellio-ruby'
 ```
 
-And then execute:
+To install using Bundler grab the latest stable version:
 
-    $ bundle
+```ruby
+gem 'hellio-ruby', '~> 3.1.0'
+```
 
-Or install it yourself as:
+To manually install twilio-ruby via Rubygems simply gem install:
 
-    $ gem install helliomessaging
+    $ gem install hellio-ruby
 
 ## Usage
 
@@ -31,7 +39,7 @@ Register on https://www.helliomessaging.com and get user details, set them in yo
 
       To Send SMS Add helliomessaging gem in your Gemfile
 
-      gem 'helliomessaging', git: "https://github.com/helliosolutions/helliomessaging-ruby.git", branch: :master
+      gem 'helliomessaging', git: "https://github.com/HellioSolutions/hellio-ruby.git", branch: :master
 
       Add call following method to send sms
 
@@ -47,7 +55,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/helliomessaging.
+Bug reports and pull requests are welcome on GitHub at https://github.com/HellioSolutions/hellio-ruby.
 
 ## License
 
