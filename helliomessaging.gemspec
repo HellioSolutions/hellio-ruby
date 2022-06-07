@@ -9,9 +9,9 @@ Gem::Specification.new do |spec|
   spec.authors       = ["VimKanzo"]
   spec.email         = ["eaglesecurity0@gmail.com"]
 
-  spec.summary       = %q{ruby gem to send SMS form hellio messaging SMS API}
-  spec.description   = %q{ruby gem to send SMS form hellio messaging SMS API}
-  spec.homepage      = ""
+  spec.summary       = %q{ruby gem for interacting with the Hellio Messaging wide range of services, SMS API, OTP API, Email Validator API, Number Lookup API, Email API, Voice Messaging API and USSD API.}
+  spec.description   = %q{ruby gem for interacting with the Hellio Messaging wide range of services, SMS API, OTP API, Email Validator API, Number Lookup API, Email API, Voice Messaging API and USSD API.}
+  spec.homepage      = "https://docs.helliomessaging.com"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'

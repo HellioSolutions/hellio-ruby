@@ -7,7 +7,7 @@ require "json"
 module HellioMessaging
   class SMS
     def self.send(message, mobile_number)
-      client_id                = ENV['HELLIO_MESSAGING_CIENT_ID']
+      client_id                = ENV['HELLIO_MESSAGING_CLIENT_ID']
       application_secret       = ENV['HELLIO_MESSAGING_APPLICATION_SECRET']
       sender_id                = ENV['HELLIO_MESSAGING_sender_id_ID']
 
