@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
   spec.name          = "hellio-ruby"
   spec.version       = HellioMessaging::VERSION
   spec.authors       = ["VimKanzo"]
-  spec.email         = ["eaglesecurity0@gmail.com"]
+  spec.email         = ["support@helliomessaging.com"]
 
   spec.summary       = %q{ruby gem for interacting with the Hellio Messaging wide range of services, SMS API, OTP API, Email Validator API, Number Lookup API, Email API, Voice Messaging API and USSD API.}
   spec.description   = %q{ruby gem for interacting with the Hellio Messaging wide range of services, SMS API, OTP API, Email Validator API, Number Lookup API, Email API, Voice Messaging API and USSD API.}
