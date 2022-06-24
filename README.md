@@ -21,7 +21,7 @@ gem 'hellio-ruby'
 To install using Bundler grab the latest stable version:
 
 ```ruby
-gem 'hellio-ruby', '~> 3.1.0'
+gem 'hellio-ruby', '~> 1.1.0'
 ```
 
 To manually install hellio-ruby via Rubygems simply gem install:
