@@ -33,7 +33,7 @@ To manually install hellio-ruby via Rubygems simply gem install:
 Register on https://app.helliomessaging.com/try-hellio and get user details, set them in your ENV VARS
 
 ```ruby
-      client_id            = ENV['HELLIO_MESSAGING_CIENT_ID']
+      client_id            = ENV['HELLIO_MESSAGING_CLIENT_ID']
       application_secret   = ENV['HELLIO_MESSAGING_APPLICATION_SECRET']
       sender_id            = ENV['HELLIO_MESSAGING_SENDER_ID']
 

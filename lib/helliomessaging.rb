@@ -10,27 +10,43 @@ class SMS
 def self.send(message, mobile_number)
 client_id = ENV['HELLIO_MESSAGING_CLIENT_ID']
 application_secret = ENV['HELLIO_MESSAGING_APPLICATION_SECRET']
-sender_id = ENV['HELLIO_MESSAGING_sender_id_ID']
+sender_id = ENV['HELLIO_MESSAGING_SENDER_ID']
 
-mobile_number = '233242813656'
 time = Time.new
-currentDate = time.strftime("%Y%m%d")
+currentDate = time.strftime("%Y%m%d%H")
 hashedAuthKey = Digest::SHA1.hexdigest(client_id + application_secret + currentDate)
 
 raise ArgumentError, 'Set your client_id, application_secret, or sender_id for helliomessaging'
 unless client_id && application_secret && sender_id
 
-baseUrl = 'https://api.helliomessaging.com/v2/sms?'
+url = 'https://api.helliomessaging.com/v2/sms'
+uri = URI.parse(url)
 
-uri = URI.parse(baseUrl)
-http = Net::HTTP.start(uri.host, uri.port)
-request = Net::HTTP::Get.new(uri.request_uri)
-res = Net::HTTP.post_form(uri,
-    'client_id' => client_id,
+request = Net::HTTP::Post.new(uri.path, { 'Content-Type' => 'application/json' })
+payload = {
+    'clientId' => client_id,
     'authKey' => hashedAuthKey,
-    'message' => message,
-    'sender_id' => sender_id,
-    'mobile_number' => mobile_number)
+    'senderId' => sender_id,
+    'msisdn' => mobile_number,
+    'message' => message
+}.to_json
+request.body = payload
+
+res = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+    http.request(request)
+end
+
+unless res.is_a?(Net::HTTPSuccess)
+  error_message = "HTTP Status: #{res.code}"
+  begin
+    error_body = JSON.parse(res.body)
+    error_message += " - Body: #{error_body.inspect}"
+  rescue JSON::ParserError
+    error_message += " - Body: #{res.body}"
+  end
+  raise "Hellio API Error: #{error_message}"
+end
+
 response = JSON.parse(res.body)
 puts(response)
 end
