@@ -1,0 +1,10 @@
+/.bundle/
+/vendor/bundle
+/pkg/
+/tmp/
+/coverage/
+*.gem
+Gemfile.lock
+.DS_Store
+.idea/
+.rspec_status

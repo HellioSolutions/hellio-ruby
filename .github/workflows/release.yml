@@ -1,0 +1,35 @@
+name: release
+
+# Publishes the gem to RubyGems when a version tag (e.g. v0.1.0) is pushed.
+# Add your RubyGems API key as the repository secret RUBYGEMS_API_KEY:
+#   Settings -> Secrets and variables -> Actions -> New repository secret
+#   Name: RUBYGEMS_API_KEY   Value: the key from https://rubygems.org/profile/api_keys
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rake spec
+
+      - name: Build gem
+        run: gem build hellio-messaging.gemspec
+
+      - name: Publish to RubyGems
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: gem push hellio-messaging-*.gem
