@@ -32,4 +32,8 @@ module Hellio
 
   # 429: too many requests. The limit is 120 requests per minute per token.
   class RateLimitError < Error; end
+
+  # 503: the service is temporarily unavailable, because an admin switched it off
+  # (SMS, OTP, voice, WhatsApp, lookup, email) or the API is paused. Retry later.
+  class ServiceUnavailableError < Error; end
 end

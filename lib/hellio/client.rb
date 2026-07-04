@@ -67,10 +67,10 @@ module Hellio
 
     # -------------------------------------------------------------------- OTP
 
-    # Send a one-time passcode. `to` is a phone number (sms/voice) or an email
-    # (email). `sender` (Sender ID) is required for sms/voice and must be
-    # approved on your account; it is ignored for email. Optional `length`
-    # (4-10 digits) and `expiry` (validity in minutes).
+    # Send a one-time passcode. `to` is a phone number (sms/voice/whatsapp) or an
+    # email (email). `sender` (Sender ID) is required for sms/voice and must be
+    # approved on your account; it is ignored for whatsapp and email. Optional
+    # `length` (4-10 digits) and `expiry` (validity in minutes).
     def otp(to, sender: nil, channel: "sms", purpose: nil, length: nil, expiry: nil, gateway: nil)
       destination_key = (channel == "email" ? "email" : "mobile_number")
 
@@ -236,6 +236,7 @@ module Hellio
         when 402 then InsufficientBalanceError
         when 422 then ValidationError
         when 429 then RateLimitError
+        when 503 then ServiceUnavailableError
         else Error
         end
 
