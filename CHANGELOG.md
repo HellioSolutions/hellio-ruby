@@ -3,7 +3,7 @@
 All notable changes to `hellio-messaging` are documented here.
 This project follows [Semantic Versioning](https://semver.org).
 
-## [0.1.0] - 2026-07-02
+## [1.0.0] - 2026-07-05
 
 Initial release of the official Ruby SDK for the Hellio Messaging API v1.
 
