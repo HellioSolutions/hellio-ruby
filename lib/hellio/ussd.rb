@@ -6,11 +6,21 @@ module Hellio
   # session), rented extensions (the short codes subscribers dial), sessions, and
   # a simulator for exercising an app's callback without a live dial.
   #
+  # Apps carry two modes, "test" and "live". A new app starts in "test" and
+  # exposes both a `test_secret` (prefix "ussk_test_") and a `live_secret`
+  # (prefix "ussk_live_"); `mode`/`is_live` say which one is active. Switching an
+  # app to "live" requires a purchased USSD extension. Extension rentals draw
+  # from a dedicated USSD balance, separate from SMS credit and the main wallet.
+  #
   # Requests are routed through the owning client, so responses are decoded to a
   # Hash with string keys (payloads under "data") and non-2xx responses raise the
   # same typed Hellio::Error subclasses. A rented-out extension returns 409
-  # (Hellio::ConflictError) and an underfunded account returns 402
-  # (Hellio::InsufficientBalanceError).
+  # (Hellio::ConflictError), an underfunded USSD balance returns 402
+  # (Hellio::InsufficientBalanceError, slug "insufficient_ussd_balance"), and
+  # going live before an extension is purchased returns 402
+  # (Hellio::ExtensionRequiredError, slug "extension_required").
+  #
+  # App and extension ids are UUID strings.
   class Ussd
     def initialize(client)
       @client = client
@@ -37,6 +47,9 @@ module Hellio
     end
 
     # Create a USSD app. `callback_url` is where Hellio POSTs each session step.
+    # The returned "data" includes the app `id` (UUID string), `name`,
+    # `callback_url`, `mode` ("test" by default), `test_secret` ("ussk_test_..."),
+    # `live_secret` ("ussk_live_..."), `is_live`, and `active`.
     def create_app(name:, callback_url:)
       post("ussd/apps", compact(
         "name" => name,
@@ -44,7 +57,8 @@ module Hellio
       ))
     end
 
-    # Update a USSD app. Pass only the fields you want to change.
+    # Update a USSD app (`id` is a UUID string). Pass only the fields you want to
+    # change.
     def update_app(id, name: nil, callback_url: nil, active: nil)
       put("ussd/apps/#{id}", compact(
         "name" => name,
@@ -53,7 +67,21 @@ module Hellio
       ))
     end
 
-    # Delete a USSD app by id.
+    # Switch a USSD app's mode (`id` is a UUID string; `mode` is "test" or
+    # "live"). Returns the app. Switching to "live" before a USSD extension is
+    # purchased raises Hellio::ExtensionRequiredError (402).
+    def set_mode(id, mode)
+      post("ussd/apps/#{id}/mode", "mode" => mode)
+    end
+
+    # Rotate a USSD app's secret for one mode (`id` is a UUID string; `mode` is
+    # "test" or "live"). Returns the app with the freshly rotated secret. The old
+    # secret for that mode stops working immediately.
+    def rotate_secret(id, mode)
+      post("ussd/apps/#{id}/rotate-secret", "mode" => mode)
+    end
+
+    # Delete a USSD app by id (UUID string).
     def delete_app(id)
       delete("ussd/apps/#{id}")
     end
@@ -65,9 +93,11 @@ module Hellio
       get("ussd/extensions")
     end
 
-    # Rent an extension by code, optionally attaching it to an app. Raises
+    # Rent an extension by code, optionally attaching it to an app (`app_id` is a
+    # UUID string). Rentals draw from the dedicated USSD balance. Raises
     # Hellio::ConflictError (409) if the code is no longer available and
-    # Hellio::InsufficientBalanceError (402) if the balance is too low.
+    # Hellio::InsufficientBalanceError (402, slug "insufficient_ussd_balance") if
+    # the USSD balance is too low.
     def rent_extension(code, app_id: nil)
       post("ussd/extensions", compact(
         "code" => code,
@@ -75,7 +105,7 @@ module Hellio
       ))
     end
 
-    # Release a rented extension by id.
+    # Release a rented extension by id (UUID string).
     def release_extension(id)
       delete("ussd/extensions/#{id}")
     end
@@ -87,24 +117,29 @@ module Hellio
       get("ussd/sessions", compact("status" => status))
     end
 
-    # Fetch a single session by id.
+    # Fetch a single session by id (UUID string).
     def session(id)
       get("ussd/sessions/#{id}")
     end
 
     # -------------------------------------------------------------- Simulator
 
-    # Simulate a USSD step against an app's callback. Pass `new_session: true`
-    # for the first step (dialing the code) and the returned `session_id` on
-    # follow-up steps. Returns the app's reply plus the `action` ("continue" or
+    # Simulate a USSD step against an app's callback. `app_id` (UUID string) is
+    # the app to drive. Pass `new_session: true` for the first step (dialing the
+    # code) and reuse the same `session_id` on follow-up steps. `service_code` is
+    # optional and defaults server-side to the shared short code; pass it only to
+    # override. Simulation is always sandboxed (no charge, no extension needed).
+    # A not-owned `app_id` raises Hellio::ValidationError (422, slug
+    # "unknown_app"). Returns the app's reply plus the `action` ("continue" or
     # "end").
-    def simulate(msisdn:, service_code:, input: nil, session_id: nil, new_session: nil)
+    def simulate(app_id:, session_id:, msisdn:, input: "", new_session: false, service_code: nil)
       post("ussd/simulate", compact(
+        "app_id" => app_id,
         "session_id" => session_id,
         "msisdn" => msisdn,
-        "service_code" => service_code,
         "input" => input,
-        "new_session" => new_session
+        "new_session" => new_session,
+        "service_code" => service_code
       ))
     end
 

@@ -24,8 +24,14 @@ module Hellio
   # 401: the API token is missing, malformed, or revoked.
   class InvalidApiTokenError < Error; end
 
-  # 402: the account balance is too low to complete the request.
+  # 402: the account balance is too low to complete the request. For USSD
+  # extension rentals this is the dedicated USSD balance ("insufficient_ussd_balance"),
+  # which is separate from SMS credit and the main wallet.
   class InsufficientBalanceError < Error; end
+
+  # 402: switching a USSD app to "live" needs a purchased USSD extension first
+  # ("extension_required"). Buy an extension, then retry the mode switch.
+  class ExtensionRequiredError < Error; end
 
   # 409: the request conflicts with the current state of a resource, e.g. renting
   # a USSD extension that is no longer available ("extension_unavailable").

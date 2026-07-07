@@ -16,6 +16,13 @@ module Hellio
     DEFAULT_BASE_URL = "https://api.helliomessaging.com/v1"
     DEFAULT_TIMEOUT = 30
 
+    # Some responses share an HTTP status but mean different things, so a few are
+    # mapped to a typed error by their response "error" slug before the status.
+    SLUG_ERRORS = {
+      "extension_required" => ExtensionRequiredError,
+      "insufficient_ussd_balance" => InsufficientBalanceError
+    }.freeze
+
     attr_reader :base_url, :timeout, :default_sender
 
     # token          - API token (falls back to HELLIO_API_TOKEN).
@@ -176,7 +183,8 @@ module Hellio
     #
     #   client.ussd.pricing
     #   client.ussd.rent_extension("100")
-    #   client.ussd.simulate(msisdn: "233241234567", service_code: "*920*100#", new_session: true)
+    #   client.ussd.simulate(app_id: app_id, session_id: "sess-1",
+    #                        msisdn: "233241234567", new_session: true)
     #
     def ussd
       @ussd ||= Ussd.new(self)
@@ -250,7 +258,10 @@ module Hellio
           "Hellio API request failed."
         end
 
+      slug = data["error"] if data.is_a?(Hash) && data["error"].is_a?(String)
+
       error_class =
+        SLUG_ERRORS[slug] ||
         case status
         when 401 then InvalidApiTokenError
         when 402 then InsufficientBalanceError

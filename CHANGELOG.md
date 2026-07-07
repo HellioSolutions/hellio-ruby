@@ -3,6 +3,31 @@
 All notable changes to `hellio-messaging` are documented here.
 This project follows [Semantic Versioning](https://semver.org).
 
+## [1.2.0] - 2026-07-07
+
+### Added
+- USSD apps now have test/live modes:
+  - `create_app` responses return `id` (UUID string), `name`, `callback_url`,
+    `mode` ("test" for new apps), `test_secret` ("ussk_test_..."), `live_secret`
+    ("ussk_live_..."), `is_live`, and `active` instead of a single `secret`.
+  - `set_mode(id, mode)` switches an app between "test" and "live".
+  - `rotate_secret(id, mode)` rotates the secret for one mode.
+- `Hellio::ExtensionRequiredError` (402), raised when switching an app to "live"
+  before a USSD extension is purchased (slug "extension_required").
+- Error mapping now resolves a few responses by their `error` slug before the
+  HTTP status, covering "extension_required" and "insufficient_ussd_balance".
+
+### Changed
+- USSD app and extension ids are UUID strings (were integers).
+- `simulate` now targets an app: `simulate(app_id:, session_id:, msisdn:,
+  input: "", new_session: false, service_code: nil)`. `service_code` is sent
+  only when given and defaults server-side to the shared short code. Simulation
+  is always sandboxed (no charge, no extension). A not-owned app returns 422
+  ("unknown_app").
+- Extension rentals draw from the dedicated USSD balance; an underfunded rental
+  now returns 402 with slug "insufficient_ussd_balance" (still
+  `Hellio::InsufficientBalanceError`).
+
 ## [1.1.0] - 2026-07-07
 
 ### Added

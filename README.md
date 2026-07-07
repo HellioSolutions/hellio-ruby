@@ -104,47 +104,70 @@ before the request is sent.
 
 ## USSD
 
-USSD endpoints live under `client.ussd`. Rent an extension (the short code
-subscribers dial), point it at an app whose `callback_url` Hellio calls on each
-session step, and simulate the flow before going live.
+USSD endpoints live under `client.ussd`. Build an app whose `callback_url`
+Hellio calls on each session step, simulate the flow while still in test mode,
+rent an extension (the short code subscribers dial), then switch the app to
+live.
+
+Apps have two modes, `"test"` and `"live"`. A new app starts in `"test"` and
+carries both a `test_secret` (prefix `ussk_test_`) and a `live_secret` (prefix
+`ussk_live_`); `mode`/`is_live` say which one is active. App and extension ids
+are UUID strings.
 
 ```ruby
 # Pricing and availability
 client.ussd.pricing                 # short code, session prices, extension prices
 client.ussd.availability("100")     # {"data" => {"code" => "100", "valid" => true, "available" => true, "monthly_price" => "50.00"}}
 
-# Apps - Hellio POSTs each session step to callback_url
+# Apps - Hellio POSTs each session step to callback_url. New apps start in test mode.
 app = client.ussd.create_app(name: "Airtime", callback_url: "https://your-app.com/ussd")
+app_id = app["data"]["id"]          # UUID string
+app["data"]["mode"]                 # "test"
+app["data"]["test_secret"]          # "ussk_test_..."
 client.ussd.apps
-client.ussd.update_app(app["data"]["id"], active: false)
-client.ussd.delete_app(app["data"]["id"])
+client.ussd.update_app(app_id, active: false)
 
-# Extensions - the code subscribers dial (raises on conflict / low balance)
+# Rotate a secret for one mode (test or live)
+client.ussd.rotate_secret(app_id, "test")
+
+# Simulate a session - always sandboxed (no charge, no extension).
+# new_session: true on the first step, then reuse the same session_id.
+# service_code is optional and defaults to the shared short code.
+client.ussd.simulate(app_id: app_id, session_id: "sess-1",
+                     msisdn: "233241234567", new_session: true)
+client.ussd.simulate(app_id: app_id, session_id: "sess-1",
+                     msisdn: "233241234567", input: "1")
+
+# Extensions - the code subscribers dial, paid from the dedicated USSD balance
 client.ussd.extensions
-client.ussd.rent_extension("100", app_id: app["data"]["id"])
-client.ussd.release_extension(42)
+ext = client.ussd.rent_extension("100", app_id: app_id)
+
+# Go live once an extension is purchased
+client.ussd.set_mode(app_id, "live")
 
 # Sessions
 client.ussd.sessions(status: "ended")
-client.ussd.session(1024)
+client.ussd.session("6f1c...")      # UUID string
 
-# Simulate a session - new_session: true on the first step, then reuse session_id
-first = client.ussd.simulate(msisdn: "233241234567", service_code: "*920*100#", new_session: true)
-client.ussd.simulate(msisdn: "233241234567", service_code: "*920*100#",
-                     session_id: first["data"]["session_id"], input: "1")
+client.ussd.release_extension(ext["data"]["id"])
+client.ussd.delete_app(app_id)
 ```
 
-Renting an extension that is no longer available raises
-`Hellio::ConflictError` (409); an insufficient balance raises
-`Hellio::InsufficientBalanceError` (402).
+Renting an extension that is no longer available raises `Hellio::ConflictError`
+(409); an underfunded USSD balance raises `Hellio::InsufficientBalanceError`
+(402, slug `insufficient_ussd_balance`). The USSD balance is dedicated, separate
+from SMS credit and the main wallet. Switching an app to live before an
+extension is purchased raises `Hellio::ExtensionRequiredError` (402, slug
+`extension_required`).
 
 ### Handling the inbound callback
 
 When a subscriber uses your extension, Hellio POSTs a JSON body
 (`sessionId`, `msisdn`, `serviceCode`, `input`, `sequence`, `mode`) to your
 app's `callback_url`, signed with an `X-Hellio-Signature` header set to
-`HMAC-SHA256(rawBody, app.secret)`. Verify it, then reply with `message` and
-`action` (`"continue"` or `"end"`).
+`HMAC-SHA256(rawBody, secret)` where `secret` is the app's secret for the mode
+that raised the call (`test_secret` in test mode, `live_secret` in live mode).
+Verify it, then reply with `message` and `action` (`"continue"` or `"end"`).
 
 ```ruby
 require "openssl"
@@ -171,6 +194,7 @@ exposes field-level details through `#errors`.
 |---|---|
 | `Hellio::InvalidApiTokenError` | 401 |
 | `Hellio::InsufficientBalanceError` | 402 |
+| `Hellio::ExtensionRequiredError` | 402 (slug `extension_required`) |
 | `Hellio::ConflictError` | 409 |
 | `Hellio::ValidationError` (`#errors`) | 422 |
 | `Hellio::RateLimitError` | 429 |
