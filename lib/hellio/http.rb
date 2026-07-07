@@ -23,6 +23,7 @@ module Hellio
         case method
         when :get then Net::HTTP::Get
         when :post then Net::HTTP::Post
+        when :put then Net::HTTP::Put
         when :delete then Net::HTTP::Delete
         else raise ArgumentError, "Unsupported HTTP method: #{method}"
         end

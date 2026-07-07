@@ -27,6 +27,10 @@ module Hellio
   # 402: the account balance is too low to complete the request.
   class InsufficientBalanceError < Error; end
 
+  # 409: the request conflicts with the current state of a resource, e.g. renting
+  # a USSD extension that is no longer available ("extension_unavailable").
+  class ConflictError < Error; end
+
   # 422: the request failed validation. See #errors for the details.
   class ValidationError < Error; end
 

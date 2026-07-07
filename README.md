@@ -7,9 +7,9 @@
 
 Ruby client for the [Hellio Messaging](https://helliomessaging.com) API v1:
 **SMS**, **OTP** (SMS / email / voice), **Voice broadcasts**, **Number Lookup (HLR)**,
-**Email Verification**, **Pricing**, **Balance**, and **Webhooks**. It uses only
-the Ruby standard library (`net/http` and `json`), so there are no runtime
-dependencies.
+**Email Verification**, **USSD**, **Pricing**, **Balance**, and **Webhooks**. It
+uses only the Ruby standard library (`net/http` and `json`), so there are no
+runtime dependencies.
 
 ## Install
 
@@ -102,6 +102,65 @@ Recipient inputs (`sms`, `voice`, `lookup`, `verify_email`) accept a single
 string, a comma-separated string, or an array. They are normalized to a list
 before the request is sent.
 
+## USSD
+
+USSD endpoints live under `client.ussd`. Rent an extension (the short code
+subscribers dial), point it at an app whose `callback_url` Hellio calls on each
+session step, and simulate the flow before going live.
+
+```ruby
+# Pricing and availability
+client.ussd.pricing                 # short code, session prices, extension prices
+client.ussd.availability("100")     # {"data" => {"code" => "100", "valid" => true, "available" => true, "monthly_price" => "50.00"}}
+
+# Apps - Hellio POSTs each session step to callback_url
+app = client.ussd.create_app(name: "Airtime", callback_url: "https://your-app.com/ussd")
+client.ussd.apps
+client.ussd.update_app(app["data"]["id"], active: false)
+client.ussd.delete_app(app["data"]["id"])
+
+# Extensions - the code subscribers dial (raises on conflict / low balance)
+client.ussd.extensions
+client.ussd.rent_extension("100", app_id: app["data"]["id"])
+client.ussd.release_extension(42)
+
+# Sessions
+client.ussd.sessions(status: "ended")
+client.ussd.session(1024)
+
+# Simulate a session - new_session: true on the first step, then reuse session_id
+first = client.ussd.simulate(msisdn: "233241234567", service_code: "*920*100#", new_session: true)
+client.ussd.simulate(msisdn: "233241234567", service_code: "*920*100#",
+                     session_id: first["data"]["session_id"], input: "1")
+```
+
+Renting an extension that is no longer available raises
+`Hellio::ConflictError` (409); an insufficient balance raises
+`Hellio::InsufficientBalanceError` (402).
+
+### Handling the inbound callback
+
+When a subscriber uses your extension, Hellio POSTs a JSON body
+(`sessionId`, `msisdn`, `serviceCode`, `input`, `sequence`, `mode`) to your
+app's `callback_url`, signed with an `X-Hellio-Signature` header set to
+`HMAC-SHA256(rawBody, app.secret)`. Verify it, then reply with `message` and
+`action` (`"continue"` or `"end"`).
+
+```ruby
+require "openssl"
+require "json"
+
+post "/ussd" do
+  raw = request.body.read
+  expected = OpenSSL::HMAC.hexdigest("SHA256", ENV["USSD_APP_SECRET"], raw)
+  halt 401 unless Rack::Utils.secure_compare(expected, request.env["HTTP_X_HELLIO_SIGNATURE"].to_s)
+
+  payload = JSON.parse(raw)
+  content_type :json
+  { message: "Welcome to #{payload['serviceCode']}", action: "continue" }.to_json
+end
+```
+
 ## Error handling
 
 Non-2xx responses raise typed errors (all subclass `Hellio::Error`). Each error
@@ -112,6 +171,7 @@ exposes field-level details through `#errors`.
 |---|---|
 | `Hellio::InvalidApiTokenError` | 401 |
 | `Hellio::InsufficientBalanceError` | 402 |
+| `Hellio::ConflictError` | 409 |
 | `Hellio::ValidationError` (`#errors`) | 422 |
 | `Hellio::RateLimitError` | 429 |
 | `Hellio::Error` | other |

@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary       = "Official Ruby SDK for the Hellio Messaging API v1."
   spec.description   = "Ruby client for the Hellio Messaging API v1: SMS, OTP " \
                        "(SMS / email / voice), voice broadcasts, number lookup (HLR), " \
-                       "email verification, pricing, balance, and webhooks."
+                       "email verification, USSD, pricing, balance, and webhooks."
   spec.homepage      = "https://github.com/HellioSolutions/hellio-ruby"
   spec.license       = "MIT"
   spec.required_ruby_version = ">= 3.1"

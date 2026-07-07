@@ -5,6 +5,7 @@ require "uri"
 
 require "hellio/errors"
 require "hellio/http"
+require "hellio/ussd"
 
 module Hellio
   # Hellio Messaging API v1 client. Authenticates with a Bearer token and exposes
@@ -168,6 +169,19 @@ module Hellio
       delete("webhooks/#{id}")
     end
 
+    # ------------------------------------------------------------------- USSD
+
+    # USSD service. Groups the USSD endpoints (pricing, availability, apps,
+    # extensions, sessions, and the session simulator) under one namespace:
+    #
+    #   client.ussd.pricing
+    #   client.ussd.rent_extension("100")
+    #   client.ussd.simulate(msisdn: "233241234567", service_code: "*920*100#", new_session: true)
+    #
+    def ussd
+      @ussd ||= Ussd.new(self)
+    end
+
     # --------------------------------------------------------------- internals
 
     private
@@ -178,6 +192,10 @@ module Hellio
 
     def post(path, body = {})
       request(:post, path, body: body)
+    end
+
+    def put(path, body = {})
+      request(:put, path, body: body)
     end
 
     def delete(path)
@@ -226,6 +244,8 @@ module Hellio
       message =
         if data.is_a?(Hash) && data["message"].is_a?(String)
           data["message"]
+        elsif data.is_a?(Hash) && data["error"].is_a?(String)
+          data["error"]
         else
           "Hellio API request failed."
         end
@@ -234,6 +254,7 @@ module Hellio
         case status
         when 401 then InvalidApiTokenError
         when 402 then InsufficientBalanceError
+        when 409 then ConflictError
         when 422 then ValidationError
         when 429 then RateLimitError
         when 503 then ServiceUnavailableError
